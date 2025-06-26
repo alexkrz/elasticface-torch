@@ -1,6 +1,6 @@
-# vscode-python-template
+# Arcface-torch
 
-A Template for Python Programming in VSCode
+Implementation of ArcFace in plain Pytorch.
 
 ## Setup
 
