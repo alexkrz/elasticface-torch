@@ -1,6 +1,11 @@
-# Arcface-torch
+# Elasticface-torch
 
-Implementation of ArcFace in plain Pytorch.
+This is an updated version of the original [ElasticFace repository](https://github.com/fdbtrs/ElasticFace).
+
+We make the following adjustments:
+
+- Replace `mxnet` by Huggingface's `datasets` library
+- Ensure compatibility with `torch > 2.0` and `numpy > 2.0`
 
 ## Setup
 
@@ -13,3 +18,20 @@ conda activate $YOUR_ENV_NAME
 pip install -r requirements.txt
 pre-commit install
 ```
+
+## Basic training
+
+Run
+
+```bash
+python train.py
+```
+
+for training a standard ArcFace model.
+
+## Todos
+
+- [ ] Add logging with `tensorboard`
+- [ ] Check that trainings can be executed deterministically
+- [ ] Adjust `train.py` for multi-gpu training
+- [ ] Add cases to config depending on dataset and loss
