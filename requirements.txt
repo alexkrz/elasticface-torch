@@ -4,3 +4,4 @@ jsonargparse[signatures]==4.38.*
 matplotlib==3.10.*
 torchinfo==1.8.*
 datasets==3.6.*
+tensorboard==2.19.*

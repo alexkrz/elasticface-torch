@@ -49,7 +49,7 @@ class CallBackLogging(object):
                     time_total = time_now / ((global_step + 1) / self.total_step)
                 time_for_end = time_total - time_now
                 if self.writer is not None:
-                    self.writer.add_scalar("time_for_end", time_for_end, global_step)
+                    # self.writer.add_scalar("time_for_end", time_for_end, global_step)
                     self.writer.add_scalar("loss", loss.avg, global_step)
                 msg = (
                     "Speed %.2f samples/sec   Loss %.4f Epoch: %d   Global Step: %d   Required: %1.f hours"

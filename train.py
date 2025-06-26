@@ -1,14 +1,17 @@
 import logging
 import os
+import random
 import time
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from jsonargparse import CLI
 from torch.nn import CrossEntropyLoss
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from backbones.iresnet import iresnet50, iresnet100
 from utils import losses
@@ -20,6 +23,7 @@ from utils.utils_logging import AverageMeter, init_logging
 @dataclass
 class Config:
     # TODO: Make config conditional depending on dataset and loss
+    seed: int = 42
     dataset: str = "webface"
     data_p: str = os.environ["DATASET_DIR"] + "/TrainDatasets/parquet-files/casia_webface.parquet"
     output_p: str = "output/arcface_r50"
@@ -38,24 +42,61 @@ class Config:
     global_step: int = 0
 
 
+def add_version_dir(output_p: str):
+    # Find existing version_X directories
+    if os.path.exists(output_p):
+        versions = [
+            int(d.split("_")[1])
+            for d in os.listdir(output_p)
+            if os.path.isdir(os.path.join(output_p, d))
+            and d.startswith("version_")
+            and d.split("_")[1].isdigit()
+        ]
+        next_version = max(versions) + 1 if versions else 1
+    else:
+        next_version = 0
+    version_p = os.path.join(output_p, f"version_{next_version}")
+
+    return version_p
+
+
+def setup_seed(seed, cuda_deterministic=True):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    if cuda_deterministic:  # slower, more reproducible
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    else:  # faster, less reproducible
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
+
+
 def main(cfg: Config):
     rank = 0
     world_size = 1
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if not os.path.exists(cfg.output_p) and rank == 0:
-        os.makedirs(cfg.output_p)
+    version_p = add_version_dir(cfg.output_p)
+    setup_seed(cfg.seed, cuda_deterministic=True)
+
+    if not os.path.exists(version_p) and rank == 0:
+        os.makedirs(version_p)
     else:
         time.sleep(2)
 
     log_root = logging.getLogger()
-    init_logging(log_root, rank, cfg.output_p)
+    init_logging(log_root, rank, version_p)
+    writer = SummaryWriter(version_p)
 
     trainset = HFDataset(cfg.data_p)
 
     train_loader = DataLoader(
         trainset,
         batch_size=cfg.batch_size,
+        shuffle=True,
         num_workers=0,
         pin_memory=True,
         drop_last=True,
@@ -127,9 +168,9 @@ def main(cfg: Config):
         total_step,
         cfg.batch_size,
         world_size,
-        writer=None,
+        writer=writer,
     )
-    callback_checkpoint = CallBackModelCheckpoint(rank, cfg.output_p)
+    callback_checkpoint = CallBackModelCheckpoint(rank, version_p)
 
     loss = AverageMeter()
     global_step = cfg.global_step
@@ -161,6 +202,8 @@ def main(cfg: Config):
         scheduler_header.step()
 
         callback_checkpoint(global_step, backbone, header)
+
+    writer.close()
 
 
 if __name__ == "__main__":

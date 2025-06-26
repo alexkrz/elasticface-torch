@@ -31,7 +31,7 @@ for training a standard ArcFace model.
 
 ## Todos
 
-- [ ] Add logging with `tensorboard`
-- [ ] Check that trainings can be executed deterministically
+- [x] Add logging with `tensorboard`
+- [x] Check that trainings can be executed deterministically
 - [ ] Adjust `train.py` for multi-gpu training
 - [ ] Add cases to config depending on dataset and loss
