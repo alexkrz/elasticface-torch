@@ -38,6 +38,6 @@ class HFDataset(Dataset):
 
 
 if __name__ == "__main__":
-    data_p = os.environ["DATASET_DIR"] + "/TrainDatasets/parquet-files/ms1mv3.parquet"
+    data_p = os.environ["DATASET_DIR"] + "/TrainDatasets/parquet-files/casia_webface.parquet"
     dataset = HFDataset(data_p)
     print(dataset[0][0].shape)
