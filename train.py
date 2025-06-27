@@ -22,6 +22,7 @@ from utils.utils_logging import AverageMeter, init_logging
 
 @dataclass
 class Config:
+    # TODO: Probably switch to EasyDict
     seed: int = 42
     dataset: str = "webface"
     data_p: str = field(default=None)
@@ -39,9 +40,7 @@ class Config:
     warmup_epoch: int = -1
     num_epoch: int = 26
     global_step: int = 0
-
-    def lr_step_func(epoch):
-        return 1
+    # lr_step_func: callable = field(default=lambda epoch: 1)  # jsonargparse does not allow a default function
 
     def __post_init__(self):
         if self.dataset == "webface":
