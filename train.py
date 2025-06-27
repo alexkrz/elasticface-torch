@@ -2,7 +2,7 @@ import logging
 import os
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import torch
@@ -22,17 +22,16 @@ from utils.utils_logging import AverageMeter, init_logging
 
 @dataclass
 class Config:
-    # TODO: Make config conditional depending on dataset and loss
     seed: int = 42
     dataset: str = "webface"
-    data_p: str = os.environ["DATASET_DIR"] + "/TrainDatasets/parquet-files/casia_webface.parquet"
+    data_p: str = field(default=None)
     output_p: str = "output/arcface_r50"
     batch_size: int = 128
     network: str = "iresnet50"
     use_se: bool = False
     embedding_size: int = 512
     loss: str = "ArcFace"
-    num_classes: int = 10572
+    num_classes: int = field(default=None)
     s: float = 64.0
     m: float = 0.50
     lr: float = 0.1
@@ -40,6 +39,26 @@ class Config:
     warmup_epoch: int = -1
     num_epoch: int = 26
     global_step: int = 0
+
+    def lr_step_func(epoch):
+        return 1
+
+    def __post_init__(self):
+        if self.dataset == "webface":
+            self.data_p = (
+                os.environ["DATASET_DIR"] + "/TrainDatasets/parquet-files/casia_webface.parquet"
+            )
+            self.num_classes = 10572
+
+            def lr_step_func(epoch):
+                return (
+                    ((epoch + 1) / (4 + 1)) ** 2
+                    if epoch < self.warmup_epoch
+                    else 0.1 ** len([m for m in [22, 30, 40] if m - 1 <= epoch])
+                )
+
+            # Overwrite default lr_step_func
+            self.lr_step_func = lr_step_func
 
 
 def add_version_dir(output_p: str):
@@ -115,6 +134,7 @@ def main(cfg: Config):
     backbone.train()
 
     # get header
+    # TODO: Add the other losses
     if cfg.loss == "ArcFace":
         header = losses.ArcFace(
             in_features=cfg.embedding_size, out_features=cfg.num_classes, s=cfg.s, m=cfg.m
@@ -137,22 +157,11 @@ def main(cfg: Config):
         weight_decay=cfg.weight_decay,
     )
 
-    if cfg.dataset == "webface":
-
-        def lr_step_func(epoch):
-            return (
-                ((epoch + 1) / (4 + 1)) ** 2
-                if epoch < cfg.warmup_epoch
-                else 0.1 ** len([m for m in [22, 30, 40] if m - 1 <= epoch])
-            )
-    else:
-        raise NotImplementedError("Unknown datase")
-
     scheduler_backbone = torch.optim.lr_scheduler.LambdaLR(
-        optimizer=opt_backbone, lr_lambda=lr_step_func
+        optimizer=opt_backbone, lr_lambda=cfg.lr_step_func
     )
     scheduler_header = torch.optim.lr_scheduler.LambdaLR(
-        optimizer=opt_header, lr_lambda=lr_step_func
+        optimizer=opt_header, lr_lambda=cfg.lr_step_func
     )
 
     criterion = CrossEntropyLoss()
