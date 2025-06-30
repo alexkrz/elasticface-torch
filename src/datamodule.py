@@ -1,8 +1,9 @@
 import os
 
 import datasets
+import lightning as L
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 
@@ -35,6 +36,35 @@ class HFDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
         return img, label
+
+
+class HFDatamodule(L.LightningDataModule):
+    def __init__(
+        self,
+        data_name: str,
+        parquet_fp: str,
+        batch_size: int = 128,
+        num_workers: int = 0,
+    ):
+        super().__init__()
+        self.save_hyperparameters()
+
+    def setup(self, stage: str):
+        print(f"Generating HFDataset for stage {stage}")
+        self.dataset = HFDataset(
+            parquet_fp=self.hparams.parquet_fp,
+        )
+
+    def train_dataloader(self):
+        return DataLoader(
+            dataset=self.dataset,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            shuffle=True,
+            pin_memory=True,
+            drop_last=True,
+            # generator=torch.Generator().manual_seed(42),
+        )
 
 
 if __name__ == "__main__":
