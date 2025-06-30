@@ -13,9 +13,9 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from backbones.iresnet import iresnet50, iresnet100
-from utils import losses
-from utils.dataset import HFDataset
+from src.datamodule import HFDataset
+from src.models import losses
+from src.models.iresnet import iresnet50, iresnet100
 from utils.utils_callbacks import CallBackLogging, CallBackModelCheckpoint
 from utils.utils_logging import AverageMeter, init_logging
 
