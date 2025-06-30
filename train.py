@@ -70,7 +70,13 @@ if __name__ == "__main__":
             "num_workers": 8,
         },
     )
-    parser.add_class_arguments(FembModule, "pl_module")
+    parser.add_class_arguments(
+        FembModule,
+        "pl_module",
+        default={
+            "header": "arcface",
+        },
+    )
     parser.link_arguments("datamodule.data_name", "pl_module.data_name", apply_on="parse")
     parser.add_class_arguments(
         Trainer,
