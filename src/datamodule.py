@@ -41,6 +41,7 @@ class HFDataset(Dataset):
 class HFDatamodule(L.LightningDataModule):
     def __init__(
         self,
+        data_name: str,
         parquet_fp: str,
         batch_size: int = 128,
         num_workers: int = 0,

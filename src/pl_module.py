@@ -22,6 +22,7 @@ header_dict = {
 class FembModule(L.LightningModule):
     def __init__(
         self,
+        data_name: str,
         backbone: str = "iresnet50",
         embed_dim: int = 512,
         dropout: float = 0.0,
@@ -65,12 +66,16 @@ class FembModule(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        def lr_step_func(epoch):
-            return (
-                ((epoch + 1) / (4 + 1)) ** 2
-                if epoch < self.hparams.warmup_epoch
-                else 0.1 ** len([m for m in [22, 30, 40] if m - 1 <= epoch])
-            )
+        if self.hparams.data_name == "webface":
+
+            def lr_step_func(epoch):
+                return (
+                    ((epoch + 1) / (4 + 1)) ** 2
+                    if epoch < self.hparams.warmup_epoch
+                    else 0.1 ** len([m for m in [22, 30, 40] if m - 1 <= epoch])
+                )
+        else:
+            raise NotImplementedError(f"No lr_step_func for dataset {self.hparams.data_name}")
 
         optimizer = torch.optim.SGD(
             # Need to optimize over all parameters in the module!
@@ -85,4 +90,4 @@ class FembModule(L.LightningModule):
             lr_lambda=lr_step_func,
         )
 
-        return optimizer, scheduler
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
