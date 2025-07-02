@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.loggers import CSVLogger, TensorBoardLogger
 
 from src.datamodule import HFDatamodule
 from src.pl_module import FembModule
@@ -39,10 +40,18 @@ def main(parser: jsonargparse.ArgumentParser):
     cfg_callbacks = cfg.trainer.pop("callbacks")
     cp_callback = ModelCheckpoint(
         save_weights_only=True,
-        save_last=True,
+        save_last=None,
+        monitor="loss",
+        mode="min",
+        filename="{epoch}_{step}_{loss:.2f}",
     )
 
-    trainer = Trainer(**cfg.trainer, callbacks=[cp_callback])
+    # Configure loggers
+    cfg_logger = cfg.trainer.pop("logger")
+    tb_logger = TensorBoardLogger(save_dir="lightning_logs", name=None)
+    csv_logger = CSVLogger(save_dir="lightning_logs", name=None, version=tb_logger.version)
+
+    trainer = Trainer(**cfg.trainer, callbacks=[cp_callback], logger=[tb_logger, csv_logger])
 
     print(f"Writing logs to {trainer.log_dir}")
     Path(trainer.log_dir).mkdir(parents=True)
@@ -83,9 +92,10 @@ if __name__ == "__main__":
         "trainer",
         default={
             "precision": "16-mixed",
-            "max_steps": 210,
             "log_every_n_steps": 50,
             "enable_checkpointing": True,
+            "max_steps": 210,
+            # "max_epochs": 2,
         },
     )
 
