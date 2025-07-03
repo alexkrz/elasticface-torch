@@ -43,13 +43,16 @@ def main(parser: jsonargparse.ArgumentParser):
         save_last=None,
         monitor="loss",
         mode="min",
+        every_n_train_steps=50,  # By default lightning only monitors the metric per epoch
         filename="{epoch}_{step}_{loss:.2f}",
     )
 
     # Configure loggers
     cfg_logger = cfg.trainer.pop("logger")
-    tb_logger = TensorBoardLogger(save_dir="lightning_logs", name=None)
-    csv_logger = CSVLogger(save_dir="lightning_logs", name=None, version=tb_logger.version)
+    tb_logger = TensorBoardLogger(save_dir="lightning_logs", name=pl_module.hparams.header)
+    csv_logger = CSVLogger(
+        save_dir="lightning_logs", name=pl_module.hparams.header, version=tb_logger.version
+    )
 
     trainer = Trainer(**cfg.trainer, callbacks=[cp_callback], logger=[tb_logger, csv_logger])
 
@@ -84,6 +87,8 @@ if __name__ == "__main__":
         "pl_module",
         default={
             "header": "arcface",
+            "s": 64.0,
+            "m": 0.5,
         },
     )
     parser.link_arguments("datamodule.data_name", "pl_module.data_name", apply_on="parse")
