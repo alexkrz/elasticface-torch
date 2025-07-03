@@ -19,7 +19,7 @@ def main(
         device = torch.device("mps")  # Apple Neural Engine (MPS)
     else:
         device = torch.device("cpu")  # Default to CPU
-    print("Device: ", device)
+    print("Device:", device)
 
     backbone = iresnet50(num_features=512)
     backbone.load_state_dict(torch.load(chkpt_fp, weights_only=True))
@@ -27,6 +27,7 @@ def main(
 
     data_set = load_data_fs(os.path.join(eval_dir, datasets[0]))
     backbone.eval()
+    # TODO: Currently test() is throwing an error
     acc1, std1, acc2, std2, xnorm, embeddings_list = test(data_set, backbone, 10, 10)
     print("XNorm: ", xnorm)
 

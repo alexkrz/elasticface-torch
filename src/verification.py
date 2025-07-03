@@ -9,11 +9,11 @@ import numpy as np
 import pandas as pd
 import sklearn
 import torch
+import torchvision.transforms.functional as tfm
 from PIL import Image
 from scipy import interpolate
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
-from torchvision import transforms
 
 
 class LFold:
@@ -211,19 +211,19 @@ def load_data_fs(path: str):
     )
     issame_list = df["issame"].astype(bool).to_list()
 
-    to_tensor = transforms.ToTensor()
-    horizontal_flip = transforms.RandomHorizontalFlip(p=1.0)
     images = []
     images_flipped = []
     print("Reading images from filesytem..")
     for img_fp in jpg_files:
-        img = to_tensor(Image.open(img_fp))
-        img_flipped = horizontal_flip(img)
+        img = tfm.to_tensor(Image.open(img_fp))
+        img_flipped = tfm.hflip(img)
         images.append(img)
         images_flipped.append(img_flipped)
 
     # torch.stack would throw an error if the image dimensions would not match
     data_list = [torch.stack(images), torch.stack(images_flipped)]
+    print(data_list[0].shape)
+    print(len(issame_list))
 
     return data_list, issame_list
 
