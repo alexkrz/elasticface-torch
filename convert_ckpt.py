@@ -5,7 +5,7 @@ from jsonargparse import CLI
 
 
 def main(
-    ckpt_p: str = "lightning_logs/version_0/checkpoints/epoch=0_step=210_loss=40.87.ckpt",
+    ckpt_p: str = "lightning_logs/cosface/version_0/checkpoints/epoch=1_step=7250_loss=17.03.ckpt",
 ):
     """Convert Pytorch Lightning Checkpoint to vanilla Pytorch weights.
 

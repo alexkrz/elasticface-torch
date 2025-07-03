@@ -7,3 +7,4 @@ __pycache__/
 # Other ignores follow here
 /output/
 /lightning_logs/
+/checkpoints/

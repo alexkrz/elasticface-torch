@@ -212,15 +212,18 @@ def load_data_fs(path: str):
     issame_list = df["issame"].astype(bool).to_list()
 
     to_tensor = transforms.ToTensor()
+    horizontal_flip = transforms.RandomHorizontalFlip(p=1.0)
+    images = []
+    images_flipped = []
     print("Reading images from filesytem..")
     for img_fp in jpg_files:
         img = to_tensor(Image.open(img_fp))
-        data_list.append(img)
+        img_flipped = horizontal_flip(img)
+        images.append(img)
+        images_flipped.append(img_flipped)
 
     # torch.stack would throw an error if the image dimensions would not match
-    data_tensor = torch.stack(data_list)
-    print(data_tensor.shape)
-    data_list = [data_tensor]
+    data_list = [torch.stack(images), torch.stack(images_flipped)]
 
     return data_list, issame_list
 
@@ -228,6 +231,7 @@ def load_data_fs(path: str):
 @torch.no_grad()
 def test(data_set, backbone, batch_size, nfolds=10):
     print("testing verification..")
+    device = next(backbone.parameters()).device
     data_list = data_set[0]
     issame_list = data_set[1]
     embeddings_list = []
@@ -242,7 +246,7 @@ def test(data_set, backbone, batch_size, nfolds=10):
             _data = data[bb - batch_size : bb]
             time0 = datetime.datetime.now()
             img = ((_data / 255) - 0.5) / 0.5
-            net_out: torch.Tensor = backbone(img)
+            net_out: torch.Tensor = backbone(img.to(device))
             _embeddings = net_out.detach().cpu().numpy()
             time_now = datetime.datetime.now()
             diff = time_now - time0

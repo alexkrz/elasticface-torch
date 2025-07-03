@@ -5,7 +5,7 @@ from typing import List
 
 import torch
 
-from eval import verification
+from src import verification
 from utils.utils_logging import AverageMeter
 
 
