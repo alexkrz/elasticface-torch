@@ -41,10 +41,10 @@ class CallBackVerification(object):
 
     def init_dataset(self, val_targets, data_dir, image_size):
         for name in val_targets:
-            path = os.path.join(data_dir, name + ".bin")
+            path = os.path.join(data_dir, name)
             if os.path.exists(path):
-                # TODO: Replace load_bin by load_data_fs
-                data_set = verification.load_bin(path, image_size)
+                # Replace load_bin by load_data_fs
+                data_set = verification.load_data_fs(path)
                 self.ver_list.append(data_set)
                 self.ver_name_list.append(name)
 

@@ -1,13 +1,19 @@
+# This code is adapted from https://github.com/fdbtrs/ElasticFace/blob/main/eval/verification.py
+
 import datetime
 import os
 import pickle
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import sklearn
 import torch
+from PIL import Image
 from scipy import interpolate
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
+from torchvision import transforms
 
 
 class LFold:
@@ -190,6 +196,35 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca=0):
 #     return data_list, issame_list
 
 
+def load_data_fs(path: str):
+    data_list = []
+    issame_list = []
+
+    path = Path(path)  # type: Path
+    assert path.exists()
+    assert (path / "pair_list.txt").exists(), "pair_list.txt not found"
+    jpg_files = sorted(list(path.glob("*.jpg")))
+    assert len(jpg_files) > 1, "No jpg file found"
+
+    df = pd.read_csv(
+        path / "pair_list.txt", sep=" ", header=None, names=["img_1", "img_2", "issame"]
+    )
+    issame_list = df["issame"].astype(bool).to_list()
+
+    to_tensor = transforms.ToTensor()
+    print("Reading images from filesytem..")
+    for img_fp in jpg_files:
+        img = to_tensor(Image.open(img_fp))
+        data_list.append(img)
+
+    # torch.stack would throw an error if the image dimensions would not match
+    data_tensor = torch.stack(data_list)
+    print(data_tensor.shape)
+    data_list = [data_tensor]
+
+    return data_list, issame_list
+
+
 @torch.no_grad()
 def test(data_set, backbone, batch_size, nfolds=10):
     print("testing verification..")
@@ -278,3 +313,8 @@ def test(data_set, backbone, batch_size, nfolds=10):
 #     outname = os.path.join("temp.bin")
 #     with open(outname, "wb") as f:
 #         pickle.dump((embeddings, issame_list), f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+if __name__ == "__main__":
+    path = os.environ["DATASET_DIR"] + "/EvalDatasets/imgdirs/lfw"
+    data_set = load_data_fs(path)
