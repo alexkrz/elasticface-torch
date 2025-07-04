@@ -27,7 +27,6 @@ def main(
 
     data_set = load_data_fs(os.path.join(eval_dir, datasets[0]))
     backbone.eval()
-    # TODO: Currently test() is throwing an error
     acc1, std1, acc2, std2, xnorm, embeddings_list = test(data_set, backbone, 10, 10)
     print("XNorm: ", xnorm)
 

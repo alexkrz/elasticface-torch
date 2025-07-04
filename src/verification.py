@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import sklearn
+import sklearn.preprocessing
 import torch
 import torchvision.transforms.functional as tfm
 from PIL import Image
@@ -114,8 +115,11 @@ def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_targe
             _, far_train[threshold_idx] = calculate_val_far(
                 threshold, dist[train_set], actual_issame[train_set]
             )
-        if np.max(far_train) >= far_target:
-            f = interpolate.interp1d(far_train, thresholds, kind="slinear")
+        unique_far_train, unique_indices = np.unique(far_train, return_index=True)
+        unique_thresholds = thresholds[unique_indices]
+        if np.max(unique_far_train) >= far_target:
+            # Use unique FAR values for interpolation
+            f = interpolate.interp1d(unique_far_train, unique_thresholds, kind="slinear")
             threshold = f(far_target)
         else:
             threshold = 0.0
